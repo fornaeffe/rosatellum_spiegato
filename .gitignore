@@ -7,8 +7,4 @@
 
 *_cache
 
-# Quarto published files
-/.quarto/
-/_site/
-index.html
-/index_files/
+.quarto/
