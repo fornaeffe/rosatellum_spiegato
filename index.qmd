@@ -1,0 +1,1014 @@
+---
+title: "Il Rosatellum, spiegato"
+author: "Luca Fornasari"
+format:
+  revealjs:
+    controls: true
+    footer: "by [Luca Fornasari](https://fornaeffe.github.io)"
+    width: 1244 
+    theme: [default, custom.scss]
+    incremental: true
+---
+
+## Se usi uno smartphone:
+
+Giralo in orizzontale
+
+Apri il menù in basso a sinistra
+
+Scegli "Tools" e poi "fullscreen"
+
+```{r setup, include=FALSE}
+library(sf)
+library(readxl)
+library(ggplot2)
+library(ggpol)
+library(scales)
+library(ggtext)
+
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+## Le elezioni
+
+Il **25 settembre** voteremo per eleggere:
+
+-   **400 deputati** nella Camera dei Deputati
+-   **200 senatori** nel Senato della Repubblica
+
+## La legge elettorale
+
+Le elezioni sono regolate dalla "legge elettorale", e la legge elettorale in vigore oggi in Italia è chiamata "[Rosatellum](https://it.wikipedia.org/wiki/Legge_Rosato)".
+
+Purtroppo per noi, è una legge piuttosto complessa: spero di riuscire a vincere la sfida di renderla un po' più chiara almeno per qualcuno.
+
+------------------------------------------------------------------------
+
+Per semplicità, adesso parlerò solo dell'elezione della Camera dei Deputati. Vedremo alla fine che l'elezione del Senato è molto simile, con qualche piccola differenza.
+
+Dei 400 deputati, 8 sono eletti nella circoscrizione Estero: li lasciamo da parte, e ci concentriamo sull'elezione degli altri 392 deputati.
+
+# Come è divisa l'Italia
+
+```{r carico_geo, results="hide"}
+circoscrizioni <- st_read("dati/proposta_commissione_shapefile", "Circoscrizioni")
+pluri <- st_read("dati/proposta_commissione_shapefile", "CP Proposta commissione")
+uni <- st_read("dati/proposta_commissione_shapefile", "CU Proposta commissione")
+
+seggi_uni <- nrow(uni)
+seggi_pluri <- 400 - 8 - seggi_uni
+```
+
+## Circoscrizioni
+
+::: columns
+::: {.column width="50%"}
+Per capire come vengono eletti i 392 deputati dal territorio italiano dobbiamo capire come la legge elettorale suddivide l'Italia.
+
+:::{.fragment}
+L'Italia è suddivisa in `r nrow(circoscrizioni)` circoscrizioni, che in alcuni casi corrispondono alle regioni, in altri casi a parte di esse.
+:::
+:::
+
+::: {.column width="50%"}
+:::{.fragment}
+```{r sf_circ}
+#| fig-height: 12
+#| cache: true
+
+par(mar = c(0, 0, 0, 0))
+plot(st_geometry(circoscrizioni), col = sf.colors(nrow(circoscrizioni), categorical = TRUE))
+```
+:::
+:::
+:::
+
+## Collegi plurinominali
+
+::: columns
+::: {.column width="50%"}
+Ogni circoscrizione è suddivisa in uno o più collegi plurinominali, in tutto `r nrow(pluri)`.
+:::
+
+::: {.column width="50%"}
+```{r sf_pluri}
+#| fig-height: 12
+#| cache: true
+
+grigi <- sample(gray.colors(length(pluri), 0, 1, 5, alpha = .3))
+
+par(mar = c(0, 0, 0, 0))
+plot(st_geometry(circoscrizioni), col = sf.colors(nrow(circoscrizioni), categorical = TRUE))
+plot(st_geometry(pluri), col = grigi, add = TRUE)
+```
+:::
+:::
+
+## Collegi uninominali
+
+::: columns
+::: {.column width="50%"}
+Ogni collegio plurinominale, a sua volta, è diviso in uno o più collegi uninominali, in tutto `r seggi_uni`.
+:::
+
+::: {.column width="50%"}
+```{r sf_uni}
+#| fig-height: 12
+#| cache: true
+
+par(mar = c(0, 0, 0, 0))
+plot(st_geometry(circoscrizioni), col = sf.colors(nrow(circoscrizioni), categorical = TRUE))
+plot(st_geometry(pluri), col = grigi, add = TRUE)
+plot(st_geometry(uni), border = "#505050", add = TRUE)
+plot(st_geometry(pluri), add = TRUE)
+plot(st_geometry(circoscrizioni), add = TRUE)
+```
+:::
+:::
+
+# La scheda elettorale
+
+## Come è fatta la scheda elettorale
+
+::: columns
+::: {.column width="50%"}
+Sulla scheda ci saranno i simboli delle liste, e alcune di esse saranno riunite in gruppi: questi gruppi sono le coalizioni.
+:::
+
+::: {.column width="50%"}
+![Facsimile di scheda elettorale](img/facsimile_camera.png)
+:::
+:::
+
+## Candidati uninominali e plurinominali
+
+::: columns
+::: {.column width="50%"}
+Ogni coalizione o lista singola presenta un candidato nel collegio uninominale (il nome indicato nel rettangolo sopra alla lista o al gruppo di liste).
+
+Ogni lista inoltre presenta un listino di 1-4 candidati nel collegio plurinominale.
+:::
+
+::: {.column width="50%"}
+![Facsimile di scheda elettorale con spiegazione](img/facsimile_camera_spiegato.png)
+:::
+:::
+
+# Come si vota?
+
+## Voto alla lista
+
+::: columns
+::: {.column width="50%"}
+Si può tracciare un segno sul simbolo della lista: il voto vale sia per la lista che per il candidato uninominale ad essa collegato.
+:::
+
+::: {.column width="50%"}
+![Esempio di voto alla lista](img/facsimile_camera_lista.png)
+:::
+:::
+
+## Voto a lista e candidato
+
+::: columns
+::: {.column width="50%"}
+Si può tracciare un segno sul simbolo della lista e anche sul candidato ad essa collegato, l'effetto è identico, anche in questo caso il voto vale per entrambi.
+:::
+
+::: {.column width="50%"}
+![Esempio di voto a lista e candidato](img/facsimile_camera_doppio.png)
+:::
+:::
+
+## Voto al solo candidato
+
+::: columns
+::: {.column width="50%"}
+Si può tracciare un segno solo sul nome del candidato uninominale: in questo caso il voto vale per il candidato uninominale, e anche per le liste ad esso collegate: viene distribuito tra esse in proporzione ai voti che esse hanno ricevuto nello stesso collegio uninominale.
+:::
+
+::: {.column width="50%"}
+![Esempio di voto al candidato](img/facsimile_camera_candidato.png)
+:::
+:::
+
+## Come NON si vota
+
+::: columns
+::: {.column width="50%"}
+-   **Non si possono esprimere preferenze** tra i candidati del listino plurinominale della lista scelta.
+-   **Non si può fare voto disgiunto**, cioè votare per un candidato uninominale e per una lista ad esso **non** collegata.
+:::
+
+::: {.column width="50%"}
+::: {.fragment}
+![Esempio di voto disgiunto](img/facsimile_camera_disgiunto.png)
+:::
+:::
+:::
+
+# Chi viene eletto?
+
+## Elezione nei collegi uninominali
+
+In ogni collegio uninominale, tra i **candidati uninominali** viene eletto quello che ha ottenuto più voti.
+
+```{r voti_uni}
+
+
+dati_uni <- read_xlsx("dati/dati.xlsx", "uni")
+dati_uni$Candidato <- paste(dati_uni$Candidato, dati_uni$Coalizione, sep = "\n")
+
+# barplot(
+#   dati_uni$Voti,
+#   horiz = TRUE,
+#   ylab = "",
+#   col = dati_uni$Colore,
+#   las = 1,
+#   names.arg = paste(dati_uni$Candidato, dati_uni$Coalizione, sep = "\n")
+# )
+
+ggplot(dati_uni, aes(Voti, Candidato)) +
+  geom_col(fill = dati_uni$Colore) +
+  theme(
+    text = element_text(size = 20)
+  )
+
+```
+
+## Elezione nei collegi uninominali
+
+In ogni collegio uninominale, tra i **candidati uninominali** viene eletto quello che ha ottenuto più voti.
+
+```{r eletto_uni}
+
+dati_uni$eletto <- FALSE
+dati_uni$eletto[order(dati_uni$Voti, decreasing = TRUE)[1]] <- TRUE
+dati_uni$label_eletto <- ifelse(dati_uni$eletto, "ELETTO!", "")
+dati_uni$alpha <- ifelse(dati_uni$eletto, 1, 0.25)
+
+ggplot(dati_uni, aes(Voti, Candidato, label = label_eletto )) +
+  geom_col(fill = dati_uni$Colore, alpha = dati_uni$alpha) +
+  theme(
+    legend.position="none",
+    text = element_text(size = 20)
+  ) + 
+  geom_text(hjust = 2)
+
+```
+
+## Elezione nei collegi uninominali
+
+::: columns
+::: {.column width="50%"}
+Ci sono `r seggi_uni` collegi uninominai, quindi in Italia vengono eletti `r seggi_uni` candidati uninominali.
+
+::: {.fragment}
+Questo meccanismo con cui viene assegnata questa parte di seggi è chiamato **maggioritario**.
+:::
+:::
+::: {.column width="50%"}
+```{r parl_uni}
+
+dt <- rbind(
+  dati_uni[, c("Coalizione", "Colore", "seggi")],
+  data.frame(
+    Coalizione = c("Non ancora assegnati", "Estero"),
+    Colore = c("#EEEEEE", "#808080"),
+    seggi = c(seggi_pluri, 8)
+  )
+)
+
+plt <- ggplot(dt) +
+  geom_parliament(aes(seats = seggi, fill = Coalizione)) +
+  scale_fill_manual(
+    values = dt$Colore,
+    labels = dt$Coalizione,
+    guide = guide_legend(reverse = TRUE)
+  ) +
+  coord_fixed() +
+  theme_void() + 
+  theme(
+    legend.position="bottom",
+    text = element_text(size = 30)
+  )
+
+plt
+
+```
+:::
+:::
+
+
+## Elezione nei collegi uninominali
+
+::: columns
+::: {.column width="50%"}
+In questo esempio:
+
+- in `r dt$seggi[dt$Coalizione == "Sinistra"]` collegi ha vinto un candidato della coalizione di Sinistra;
+- in `r dt$seggi[dt$Coalizione == "Gialli"]` collegi ha vinto un candidato della lista singola Gialli;
+- in `r dt$seggi[dt$Coalizione == "Centro"]` collegi ha vinto un candidato della coalizione di Centro;
+- in `r dt$seggi[dt$Coalizione == "Destra"]` collegi ha vinto un candidato della coalizione di Destra;
+:::
+::: {.column width="50%"}
+```{r parl_uni_bis}
+
+plt
+
+```
+:::
+:::
+
+## E il resto dei seggi?
+
+::: columns
+::: {.column width="50%"}
+Per adesso abbiamo assegnato solo `r seggi_uni` seggi. Tolti altri 8 seggi per la circoscrizione estero, ne restano da assegnare `r seggi_pluri`.
+
+::: {.fragment}
+Il resto dei seggi viene assegnato ai candidati delle liste nei **collegi plurinominali** attraverso un meccanismo **proporzionale**. Vediamo come.
+:::
+:::
+::: {.column width="50%"}
+```{r parl_uni_tris}
+
+plt
+
+```
+:::
+:::
+
+# La parte proporzionale
+
+## Totali nazionali
+
+::: columns
+::: {.column width="40%"}
+Per prima cosa vengono sommati insieme, a livello nazionale, i voti per ciascuna lista.
+:::
+
+::: {.column width="60%"}
+```{r totali_naz}
+#| fig-height: 7.5
+
+dati_liste <-  read_xlsx("dati/dati.xlsx", "liste")
+
+dati_liste$Lista <- factor(dati_liste$Lista, levels = dati_liste$Lista)
+
+grafico_naz <- function(
+    dati,
+    x_var = "Voti",
+    coal_elim = NULL
+) {
+  if (x_var == "%") {
+    dati <- merge(
+      dati,
+      aggregate(
+        Percentuale ~ Coalizione,
+        dati,
+        sum
+      ),
+      by = "Coalizione",
+      suffixes = c("", "_Coal")
+    )
+    
+    dati$Nome_Coal_per_grafico <- paste0(
+      dati$Coalizione,
+      "<br />",
+      format(round(dati$Percentuale_Coal * 100, 1), nsmall=1),
+      "%"
+    )
+    
+    x <- dati$Percentuale
+    y <- dati$Nome_Coal_per_grafico
+    delta_x <- 0.01
+    
+    col_labels <- paste(dati$Lista, format(round(dati$Percentuale * 100, 1), nsmall=1), "%")
+  } else {
+    x <- dati$Voti
+    y <- dati$Coalizione
+    delta_x <- 100000
+    col_labels <- dati$Lista
+  }
+  
+  if ("SOGLIA3" %in% colnames(dati)) {
+    colore_testo <- ifelse(dati$SOGLIA3, "black", "gray")
+  } else {
+    colore_testo <- "black"
+  }
+  
+  if (is.null(coal_elim)) {
+    colore.testo.y <- "#404040"
+    colore.box.y <- NA
+  } else {
+    colore.testo.y <- ifelse(coal_elim, "red", "#404040")
+    colore.box.y <- ifelse(coal_elim, "#FFBBBB", NA)
+  }
+  
+  
+  plt <- ggplot(
+    dati,
+    aes(
+      x = x, 
+      y = y, 
+      group = Lista,
+      fill = Colore
+    )
+  ) +
+    geom_col(
+      position = position_dodge2(
+        preserve = "single",
+        padding = .1
+      )
+    ) +
+    scale_fill_identity() +
+    geom_text(
+      aes(
+        x = x + delta_x,
+        y = y,
+        group = Lista,
+        label = col_labels,
+        colour = colore_testo
+      ),
+      size = 7,
+      hjust = "left",
+      position = position_dodge2(
+        width = 1,
+        preserve = "single",
+        padding = .1
+      )
+    ) +
+    scale_colour_identity()  +
+    theme(
+      legend.position="none",
+      text = element_text(size = 30),
+      axis.title.y = element_blank(),
+      axis.title.x = element_blank(),
+      axis.text.y = element_markdown(
+        colour = colore.testo.y,
+        fill = colore.box.y,
+        lineheight = 1.1,
+        padding = margin(4, 4, 4, 4),
+        r = grid::unit(8, "pt")
+      )
+    ) 
+  
+  if (x_var == "%") {
+    plt <- plt +
+      scale_x_continuous(
+        labels = label_percent(),
+        limits = c(0, max(x) * 1.2)
+      )
+  } else {
+    plt <- plt +
+      scale_x_continuous(
+        labels = label_comma(),
+        limits = c(0, max(x) * 1.2)
+      )
+  }
+  
+  if (
+    "SOGLIA3" %in% colnames(dati) &
+    x_var == "%"
+  ) {
+    plt <- plt +
+      geom_vline(xintercept = 0.03, colour = "red")
+  }
+  
+  plt
+}
+
+grafico_naz(dati_liste)
+```
+:::
+:::
+
+## Percentuali nazionali
+
+::: columns
+::: {.column width="40%"}
+Questi voti vengono tradotti in percentuali...
+:::
+
+::: {.column width="60%"}
+```{r percentuali_naz}
+#| fig-height: 7.5
+
+grafico_naz(dati_liste, "%")
+```
+:::
+:::
+
+## Soglia di sbarramento: 3%
+
+::: columns
+::: {.column width="40%"}
+Le **liste** che hanno fatto **meno del 3%** non ricevono seggi da questa distribuzione. [^1]
+:::
+
+::: {.column width="60%"}
+```{r soglia3}
+#| fig-height: 7.5
+
+dati_liste$SOGLIA3 <- dati_liste$Percentuale > 0.03
+
+dati_liste$Colore <- paste0(
+  dati_liste$Colore, 
+  ifelse(
+    dati_liste$SOGLIA3,
+    "",
+    "40"
+  )
+)
+
+grafico_naz(dati_liste, "%")
+```
+:::
+:::
+
+[^1]: C'è una eccezione per le liste di minoranze linguistiche
+
+
+## Soglia di sbarramento: 10%
+
+::: columns
+::: {.column width="40%"}
+Una **coalizione** che ha fatto **meno del 10%** non è più considerata coalizione.
+
+::: {.fragment}
+Le liste al suo interno possono comunque ricevere seggi se hanno fatto almeno il 3%.
+:::
+
+::: {.fragment .evidenziato}
+Nell'esempio, il centro non è riuscito a raggiungere il 10%...
+:::
+
+:::
+
+::: {.column width="60%"}
+```{r soglia10}
+#| fig-height: 7.5
+
+coal <- aggregate(
+  Percentuale ~ Coalizione,
+  dati_liste,
+  sum
+)
+
+coal <- merge(
+  coal,
+  aggregate(
+    Lista ~ Coalizione,
+    dati_liste,
+    length
+  )
+)
+
+coal$Coal_eliminata <- coal$Percentuale < 0.1 & coal$Lista > 1
+
+dati_liste <- merge(
+  dati_liste,
+  coal[, c("Coalizione", "Coal_eliminata")]
+)
+
+
+grafico_naz(dati_liste, "%", coal$Coal_eliminata)
+```
+:::
+:::
+
+## Soglia di sbarramento: 10%
+
+::: columns
+::: {.column width="40%"}
+Una **coalizione** che ha fatto **meno del 10%** non è più considerata coalizione.
+
+Le liste al suo interno possono comunque ricevere seggi se hanno fatto almeno il 3%.
+
+::: {.evidenziato}
+...dunque ignoro la coalizione e separo tra loro le liste
+:::
+:::
+
+::: {.column width="60%"}
+```{r soglia10_bis}
+#| fig-height: 7.5
+
+dati_liste$Coalizione[dati_liste$Coal_eliminata] <- 
+  as.character(dati_liste$Lista[dati_liste$Coal_eliminata])
+
+grafico_naz(dati_liste, "%")
+```
+:::
+:::
+
+## Trasferimento voti delle liste minori
+
+::: columns
+::: {.column width="40%"}
+
+In una coalizione che ha fatto più del 10%,
+le liste che hanno fatto tra l'1% e il 3% vengono comunque escluse,
+ma i loro voti non sono persi:
+vengono ridistribuiti alle liste della coalizione che hanno superato il 3%.
+
+:::
+
+::: {.column width="60%"}
+```{r trasf_voti}
+#| fig-height: 7.5
+
+plt <- grafico_naz(dati_liste, "%")
+
+# Nota: qui ho inserito manualmente le coordinate.
+# Non avevo voglia di determinarle dai dati!
+
+plt +
+  geom_curve(
+    aes(x = 0.025, y = 4.9, xend = 0.17, yend = 5),
+    arrow = arrow(),
+    colour = "#FF00FF",
+    size = 1.2,
+    curvature = 0.2
+  ) +
+  geom_curve(
+    aes(x = 0.025, y = 4.9, xend = 0.19, yend = 5.4),
+    arrow = arrow(),
+    colour = "#FF00FF",
+    size = 1.2,
+    curvature = -0.2
+  ) +
+  geom_vline(xintercept = 0.01, colour = "orange")
+
+
+```
+:::
+:::
+
+## Trasferimento voti delle liste minori
+
+::: columns
+::: {.column width="40%"}
+
+In una coalizione che ha fatto più del 10%,
+le liste che hanno fatto tra l'1% e il 3% vengono comunque escluse,
+ma i loro voti non sono persi:
+vengono ridistribuiti alle liste della coalizione che hanno superato il 3%.
+
+:::
+
+::: {.column width="60%"}
+```{r trasf_voti_2}
+#| fig-height: 7.5
+
+# Anche qui individuo manualmente le liste a cui togliere e mettere
+
+dati_liste$Voti[dati_liste$Lista %in% c("Verdi", "Rossi")] <-
+  dati_liste$Voti[dati_liste$Lista %in% c("Verdi", "Rossi")] +
+  dati_liste$Voti[dati_liste$Lista == "Fucsia"] *
+  dati_liste$Voti[dati_liste$Lista %in% c("Verdi", "Rossi")] /
+  sum(dati_liste$Voti[dati_liste$Lista %in% c("Verdi", "Rossi")])
+
+dati_liste$Percentuale[dati_liste$Lista %in% c("Verdi", "Rossi")] <-
+  dati_liste$Percentuale[dati_liste$Lista %in% c("Verdi", "Rossi")] +
+  dati_liste$Percentuale[dati_liste$Lista == "Fucsia"] *
+  dati_liste$Percentuale[dati_liste$Lista %in% c("Verdi", "Rossi")] /
+  sum(dati_liste$Percentuale[dati_liste$Lista %in% c("Verdi", "Rossi")])
+
+dati_liste$Percentuale[dati_liste$Lista == "Fucsia"] <- 0
+
+
+grafico_naz(dati_liste, "%")
+
+```
+:::
+:::
+
+## Chi è rimasto in gioco?
+
+::: columns
+::: {.column width="40%"}
+
+Togliamo tutte le liste che non hanno raggiunto il 3%,
+ed esprimiamo di nuovo i risultati in termini di voti.
+
+:::
+
+::: {.column width="60%"}
+```{r liste_rimaste}
+#| fig-height: 7.5
+
+dati_liste <- dati_liste[dati_liste$SOGLIA3, ]
+
+grafico_naz(dati_liste)
+
+```
+:::
+:::
+
+## Chi è rimasto in gioco?
+
+::: columns
+::: {.column width="40%"}
+
+Separo le singole liste, le coalizioni non mi interessano più.
+
+:::
+
+::: {.column width="60%"}
+```{r liste_rimaste_2}
+#| fig-height: 7.5
+
+plt <- ggplot(
+  dati_liste,
+  aes(
+    x = Voti, 
+    y = Lista,
+    fill = Colore
+  )
+) +
+  geom_col(
+    width = .5
+  ) +
+  scale_fill_identity() +
+  theme(
+    legend.position="none",
+    text = element_text(size = 30),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  ) +
+  scale_x_continuous(
+    labels = label_comma(),
+    limits = c(0, max(dati_liste$Voti) * 1.1)
+  )
+
+plt
+```
+:::
+:::
+
+## Riparto nazionale
+
+::: columns
+::: {.column width="40%"}
+
+Dovevamo ancora assegnare `r seggi_pluri` seggi, ricordate?
+
+:::
+
+::: {.column width="60%"}
+```{r riparto_naz_pre}
+#| fig-height: 7.5
+
+plt
+
+```
+:::
+:::
+
+## Riparto nazionale
+
+::: columns
+::: {.column width="40%"}
+
+Dovevamo ancora assegnare `r seggi_pluri` seggi, ricordate?
+
+Li distribuisco ora alle liste rimaste, proporzionalmente ai voti.
+^[In realtà i seggi prima vengono divisi tra coalizioni,
+poi tra liste all'interno delle coalizioni.]
+
+:::
+
+::: {.column width="60%"}
+```{r riparto_naz_pre_2}
+#| fig-height: 7.5
+
+plt
+
+```
+:::
+:::
+
+## Riparto nazionale
+
+::: columns
+::: {.column width="40%"}
+
+Dovevamo ancora assegnare `r seggi_pluri` seggi, ricordate?
+
+Li distribuisco ora alle liste rimaste, proporzionalmente ai voti.
+^[In realtà i seggi prima vengono divisi tra coalizioni,
+poi tra liste all'interno delle coalizioni.]
+
+:::
+
+::: {.column width="60%"}
+```{r riparto_nazionale}
+#| fig-height: 7.5
+
+q <- sum(dati_liste$Voti) / seggi_pluri
+dati_liste$parte_intera <- dati_liste$Voti %/% q
+dati_liste$resto <- dati_liste$Voti %% q
+
+da_assegnare <- seggi_pluri - sum(dati_liste$parte_intera)
+
+dati_liste$seggio_da_resti <- 0
+dati_liste$seggio_da_resti[order(dati_liste$resto, decreasing = TRUE)[1:da_assegnare]] <- 1
+dati_liste$seggi <- dati_liste$parte_intera + dati_liste$seggio_da_resti
+
+df_seggi <- data.frame(
+  id_seggio = unlist(lapply(dati_liste$seggi, seq_len)),
+  Lista = rep(dati_liste$Lista, times = dati_liste$seggi)
+)
+# df_seggi$i_x <- (df_seggi$id_seggio + 1) %/% 2
+# df_seggi$i_y <- ((df_seggi$id_seggio + 1) %% 2 - .5) * .5
+# df_seggi$x <- df_seggi$i_x * q * 2 
+# df_seggi$y <- df_seggi$i_y + as.numeric(as.factor(df_seggi$Lista))
+df_seggi$x <- df_seggi$id_seggio * q
+df_seggi$y <- as.numeric(droplevels(df_seggi$Lista))
+
+df_seggi <- merge(
+  df_seggi,
+  dati_liste[, c("Lista", "Colore")]
+)
+
+plt <- ggplot(
+  dati_liste,
+  aes(
+    x = Voti, 
+    y = Lista,
+    fill = Colore,
+    label = seggi
+  )
+) +
+  geom_col(
+    width = .5,
+    alpha = .5
+  ) +
+  scale_fill_identity() +
+  theme(
+    legend.position="none",
+    text = element_text(size = 30),
+    axis.title.y = element_blank(),
+    axis.title.x = element_blank()
+  ) +
+  scale_x_continuous(
+    labels = label_comma(),
+    limits = c(0, max(dati_liste$Voti) * 1.1)
+  ) +
+  geom_text(
+    hjust = "left",
+    nudge_x = 300000,
+    size = 10
+  ) +
+  geom_point(
+    aes(
+      x = x,
+      y = y,
+      fill = Colore
+    ),
+    data = df_seggi,
+    size = 4,
+    shape = 21,
+    inherit.aes = FALSE
+  )
+  
+plt
+```
+:::
+:::
+
+## Ma chi viene eletto?
+
+::: columns
+::: {.column width="40%"}
+
+::: {.fragment}
+Quali candidati andranno ad occupare questi seggi?
+:::
+
+::: {.fragment}
+Se ricordate, ogni lista presentava,
+in ogni collegio plurinominale, un listino di 1-4 candidati.
+:::
+
+::: {.fragment}
+Da quali collegi, quindi, prendiamo i candidati per riempire questi seggi?
+:::
+
+:::
+
+::: {.column width="60%"}
+```{r riparto_nazionale_end}
+#| fig-height: 7.5
+
+plt
+```
+:::
+:::
+
+## In quali collegi vengono eletti i candidati?
+
+## In quali collegi vengono eletti i candidati?
+
+Risposta semplice:
+
+**Nei collegi dove la lista ha preso più voti**[^4]
+
+:::{.fragment}
+Più voti prende una lista in un collegio,
+più è probabile che si peschi proprio da quel collegio lì
+per riempire i seggi che le spettano a livello nazionale.
+:::
+
+[^4]:In realtà il meccanismo di distribuzione dei voti nei collegi è molto complesso.
+Forse nei prossimi giorni farò un approfondimento, per oggi mi fermo qui.
+
+# Ed infine...
+
+## Ecco la Camera!
+
+```{r camera}
+
+dati_liste$lbl <- paste0(
+  dati_liste$Lista, 
+  " seggi proprozionale: ", 
+  dati_liste$seggi
+)
+
+dt <- dt[dt$Coalizione != "Non ancora assegnati", ]
+
+dt$lbl <- paste0(
+  dt$Coalizione, 
+  " seggi maggioritario: ", 
+  dt$seggi
+)
+
+dt$lbl[dt$Coalizione == "Estero"] <- "Estero: 8"
+
+dt <- rbind(
+  dt,
+  dati_liste[, c("Coalizione", "Colore", "seggi", "lbl")]
+)
+
+dt <- dt[order(dt$Coalizione == "Estero"), ]
+
+ggplot(dt) +
+  geom_parliament(
+    aes(seats = seggi, fill = lbl)
+  ) +
+  scale_fill_manual(
+    values = dt$Colore,
+    labels = dt$lbl,
+    guide = guide_legend(reverse = TRUE)
+  ) +
+  coord_fixed() +
+  theme_void() +
+  theme(
+    text = element_text(size = 20),
+    legend.title = element_blank()
+  )
+
+
+```
+
+# E il Senato?
+
+## Il Senato
+
+L'elezione del Senato funziona come quella della Camera,
+con qualche differenza:
+
+- ci sono la metà dei seggi
+- quindi ci saranno meno collegi uninominali, e più grandi
+- e di conseguenza meno collegi plurinominali, e più grandi
+- al Senato le circoscrizioni corrispondono alle 20 regioni d'Italia
+
+## Il Senato
+
+L'elezione del Senato funziona come quella della Camera,
+con qualche differenza:
+
+- anche se una lista non arriva al 3% a livello nazionale,
+  può comunque ricevere seggi nella parte proporzionale
+  se in una regione ottiene almeno il 20%
+- la distribuzione della parte proporzionale dei seggi non avviene a livello nazionale,
+  ma regione per regione
+
+## The End!
+
+Grazie dell'attenzione!
+
+Se trovate errori, 
+se avete suggerimenti su cosa potrei aggiungere o rendere più comprensibile,
+se avete domande,
+potete contattarmi alla [mia e-mail](mailto:fornaeffe@gmail.com)
+o sul [repository su GitHub](https://github.com/fornaeffe/rosatellum_spiegato).
+
+:::{.aside}
+Nel caso non fosse chiaro,
+i nomi di liste e candidati e i risultati ottenuti
+sono puramente di fantasia.
+:::
+
